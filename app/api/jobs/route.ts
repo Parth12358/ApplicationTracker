@@ -1,27 +1,48 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { jobs } from '@/lib/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { addJob } from "@/lib/db/addJob";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    // Get username from cookie/session
-    const username = request.cookies.get('username')?.value
-    
-    if (!username) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get username from session cookie
+    const cookieStore = await cookies();
+    const session = cookieStore.get("session");
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch all jobs for this user, ordered by newest first (latest applied)
-    const userJobs = await db
-      .select()
-      .from(jobs)
-      .where(eq(jobs.username, username))
-      .orderBy(desc(jobs.createdAt))
+    const username = session.value;
 
-    return NextResponse.json({ jobs: userJobs })
+    // Parse request body
+    const body = await request.json();
+    const { company, jobTitle, jobDescription, location, applicationUrl, notes } = body;
+
+    // Validate required fields
+    if (!company || !jobTitle) {
+      return NextResponse.json(
+        { error: "Company and job title are required" },
+        { status: 400 }
+      );
+    }
+
+    // Add job to database
+    const newJob = await addJob({
+      username,
+      company,
+      jobTitle,
+      jobDescription,
+      location,
+      applicationUrl,
+      notes,
+    });
+
+    return NextResponse.json({ success: true, job: newJob }, { status: 201 });
   } catch (error) {
-    console.error('Error fetching jobs:', error)
-    return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 })
+    console.error("Error adding job:", error);
+    return NextResponse.json(
+      { error: "Failed to add job" },
+      { status: 500 }
+    );
   }
 }
