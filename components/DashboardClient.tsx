@@ -29,10 +29,9 @@ interface DashboardClientProps {
   username: string;
   stats: Stats;
   allJobs: Job[];
-  existingJobs: Array<{ company: string; jobTitle: string }>;
 }
 
-export default function DashboardClient({ username, stats, allJobs, existingJobs }: DashboardClientProps) {
+export default function DashboardClient({ username, stats, allJobs }: DashboardClientProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -160,7 +159,7 @@ export default function DashboardClient({ username, stats, allJobs, existingJobs
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              <SimplifyJobsList existingJobs={existingJobs} />
+              <SimplifyJobsList />
             </div>
           </div>
         </div>

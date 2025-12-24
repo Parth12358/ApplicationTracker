@@ -11,17 +11,11 @@ interface SimplifyJob {
   isFAANG: boolean;
 }
 
-interface SimplifyJobsListProps {
-  existingJobs: Array<{ company: string; jobTitle: string }>;
-}
-
-type FilterTab = 'new' | 'all';
 type SortOption = 'date' | 'company' | 'title';
 
-export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps) {
+export default function SimplifyJobsList() {
   const [jobs, setJobs] = useState<SimplifyJob[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('new');
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [addingJobId, setAddingJobId] = useState<string | null>(null);
 
@@ -40,13 +34,6 @@ export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps
     fetchJobs();
   }, []);
 
-  const isJobInTracker = (job: SimplifyJob) => {
-    return existingJobs.some(
-      (existing) =>
-        existing.company.toLowerCase() === job.company.toLowerCase() &&
-        existing.jobTitle.toLowerCase() === job.jobTitle.toLowerCase()
-    );
-  };
 
   const handleAddToTracker = async (job: SimplifyJob) => {
     const jobId = `${job.company}-${job.jobTitle}`;
@@ -88,14 +75,8 @@ export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps
     return 999;
   };
 
-  const filteredAndSortedJobs = () => {
-    let filtered = jobs;
-
-    if (activeFilter === 'new') {
-      filtered = jobs.filter((job) => !isJobInTracker(job));
-    }
-
-    const sorted = [...filtered].sort((a, b) => {
+  const sortedJobs = () => {
+    const sorted = [...jobs].sort((a, b) => {
       if (sortBy === 'date') {
         const daysA = parseDateToDays(a.datePosted);
         const daysB = parseDateToDays(b.datePosted);
@@ -113,8 +94,7 @@ export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps
     return sorted;
   };
 
-  const displayedJobs = filteredAndSortedJobs();
-  const newJobsCount = jobs.filter((job) => !isJobInTracker(job)).length;
+  const displayedJobs = sortedJobs();
 
   if (loading) {
     return (
@@ -126,32 +106,9 @@ export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps
 
   return (
     <div className="space-y-4">
-      {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-white/20">
-        <button
-          onClick={() => setActiveFilter('new')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeFilter === 'new'
-              ? 'border-b-2 border-white text-white'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          New Jobs ({newJobsCount})
-        </button>
-        <button
-          onClick={() => setActiveFilter('all')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeFilter === 'all'
-              ? 'border-b-2 border-white text-white'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          All Jobs ({jobs.length})
-        </button>
-      </div>
-
       {/* Sort Dropdown */}
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-white">All Jobs ({jobs.length})</h2>
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -167,14 +124,11 @@ export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps
       <div className="space-y-3">
         {displayedJobs.length === 0 ? (
           <p className="text-center text-gray-400 py-8">
-            {activeFilter === 'new'
-              ? 'No new jobs available. All SimplifyJobs are already in your tracker!'
-              : 'No jobs found.'}
+            No jobs found.
           </p>
         ) : (
           displayedJobs.map((job, index) => {
             const jobId = `${job.company}-${job.jobTitle}`;
-            const isAdded = isJobInTracker(job);
             const isAdding = addingJobId === jobId;
 
             return (
@@ -198,7 +152,7 @@ export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps
 
                   <div className="flex flex-col gap-2 items-end">
                     {job.applicationUrl && (<a
-                      
+
                         href={job.applicationUrl}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -207,19 +161,13 @@ export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps
                         Apply →
                       </a>
                     )}
-                    {isAdded ? (
-                      <span className="px-3 py-1 bg-white/20 text-white text-sm rounded-md">
-                        Added ✓
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleAddToTracker(job)}
-                        disabled={isAdding}
-                        className="px-3 py-1 bg-white/10 text-white text-sm rounded-md hover:bg-white/20 disabled:bg-white/5 border border-white/20"
-                      >
-                        {isAdding ? 'Adding...' : '+ Add to Tracker'}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleAddToTracker(job)}
+                      disabled={isAdding}
+                      className="px-3 py-1 bg-white/10 text-white text-sm rounded-md hover:bg-white/20 disabled:bg-white/5 border border-white/20"
+                    >
+                      {isAdding ? 'Adding...' : '+ Add to Tracker'}
+                    </button>
                   </div>
                 </div>
               </div>
