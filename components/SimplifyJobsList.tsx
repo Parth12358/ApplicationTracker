@@ -11,9 +11,13 @@ interface SimplifyJob {
   isFAANG: boolean;
 }
 
+interface SimplifyJobsListProps {
+  existingJobs: Array<{ company: string; jobTitle: string }>;
+}
+
 type SortOption = 'date' | 'company' | 'title';
 
-export default function SimplifyJobsList() {
+export default function SimplifyJobsList({ existingJobs }: SimplifyJobsListProps) {
   const [jobs, setJobs] = useState<SimplifyJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('date');
@@ -34,6 +38,13 @@ export default function SimplifyJobsList() {
     fetchJobs();
   }, []);
 
+  const isJobInTracker = (job: SimplifyJob) => {
+    return existingJobs.some(
+      (existing) =>
+        existing.company.toLowerCase() === job.company.toLowerCase() &&
+        existing.jobTitle.toLowerCase() === job.jobTitle.toLowerCase()
+    );
+  };
 
   const handleAddToTracker = async (job: SimplifyJob) => {
     const jobId = `${job.company}-${job.jobTitle}`;
@@ -130,16 +141,24 @@ export default function SimplifyJobsList() {
           displayedJobs.map((job, index) => {
             const jobId = `${job.company}-${job.jobTitle}`;
             const isAdding = addingJobId === jobId;
+            const isTracked = isJobInTracker(job);
 
             return (
               <div
                 key={index}
-                className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-colors"
+                className={`backdrop-blur-sm border rounded-lg p-4 transition-colors ${
+                  isTracked
+                    ? 'bg-green-500/10 border-green-500/30 hover:bg-green-500/20'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
               >
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-white flex items-center gap-2">
+                    <h3 className={`font-semibold flex items-center gap-2 ${
+                      isTracked ? 'text-green-300' : 'text-white'
+                    }`}>
                       {job.isFAANG && <span>🔥</span>}
+                      {isTracked && <span className="text-green-400">✓</span>}
                       {job.company}
                     </h3>
                     <p className="text-gray-300 mt-1">{job.jobTitle}</p>
@@ -164,9 +183,13 @@ export default function SimplifyJobsList() {
                     <button
                       onClick={() => handleAddToTracker(job)}
                       disabled={isAdding}
-                      className="px-3 py-1 bg-white/10 text-white text-sm rounded-md hover:bg-white/20 disabled:bg-white/5 border border-white/20"
+                      className={`px-3 py-1 text-sm rounded-md border transition-colors ${
+                        isTracked
+                          ? 'bg-green-500/20 text-green-200 border-green-500/40 hover:bg-green-500/30'
+                          : 'bg-white/10 text-white border-white/20 hover:bg-white/20 disabled:bg-white/5'
+                      }`}
                     >
-                      {isAdding ? 'Adding...' : '+ Add to Tracker'}
+                      {isAdding ? 'Adding...' : isTracked ? '✓ In Tracker - Add Again' : '+ Add to Tracker'}
                     </button>
                   </div>
                 </div>

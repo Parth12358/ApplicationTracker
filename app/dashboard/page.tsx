@@ -23,5 +23,10 @@ export default async function DashboardPage() {
     rejected: jobs.filter((j) => j.status === 'rejected').length,
   };
 
-  return <DashboardClient username={username} stats={stats} allJobs={jobs} />;
+  const existingJobs = jobs.map((job) => ({
+    company: job.company,
+    jobTitle: job.jobTitle,
+  }));
+
+  return <DashboardClient username={username} stats={stats} allJobs={jobs} existingJobs={existingJobs} />;
 }
